@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.RatingBar;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -12,6 +13,7 @@ import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.NavController;
 import androidx.navigation.Navigation;
+import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.company.recyclerview.databinding.FragmentRecyclerElementosBinding;
@@ -59,6 +61,24 @@ public class RecyclerElementosFragment extends Fragment {
                 elementosAdapter.establecerLista(elementos);
             }
         });
+
+        new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(
+                ItemTouchHelper.UP | ItemTouchHelper.DOWN,
+                ItemTouchHelper.RIGHT  | ItemTouchHelper.LEFT) {
+
+            @Override
+            public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
+                return true;
+            }
+
+            @Override
+            public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
+                int posicion = viewHolder.getAdapterPosition();
+                Elemento elemento = elementosAdapter.obtenerElemento(posicion);
+                elementosViewModel.eliminar(elemento);
+
+            }
+        }).attachToRecyclerView(binding.recyclerView);
     }
 
     class ElementosAdapter extends RecyclerView.Adapter<ElementoViewHolder> {
@@ -73,6 +93,10 @@ public class RecyclerElementosFragment extends Fragment {
             return new ElementoViewHolder(ViewholderElementoBinding.inflate(getLayoutInflater(), parent, false));
         }
 
+        public Elemento obtenerElemento(int posicion){
+            return elementos.get(posicion);
+        }
+
         // rellenar un ViewHolder en una posición del Recycler con los datos del elemento que
         // esté en esa misma posición en el Array
         @Override
@@ -82,6 +106,16 @@ public class RecyclerElementosFragment extends Fragment {
 
             holder.binding.nombre.setText(elemento.nombre);
             holder.binding.valoracion.setRating(elemento.valoracion);
+
+
+            holder.binding.valoracion.setOnRatingBarChangeListener(new RatingBar.OnRatingBarChangeListener() {
+                @Override
+                public void onRatingChanged(RatingBar ratingBar, float rating, boolean fromUser) {
+                    if(fromUser) {
+                        elementosViewModel.actualizar(elemento, rating);
+                    }
+                }
+            });
         }
 
         // informar al Recycler de cuántos elementos habrá en la lista
